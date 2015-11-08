@@ -1,10 +1,10 @@
+// smart component
 import React from 'react-native';
-// import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux/native'
 import { addTodo, completeTodo, setVisibilityFilter, VisibilityFilters } from '../actions'
-// import AddTodo from '../components/AddTodo'
-// import TodoList from '../components/TodoList'
-// import Footer from '../components/Footer'
+import AddTodo from '../components/AddTodo'
+import TodoList from '../components/TodoList'
+import Footer from '../components/Footer'
 
 var {
   AppRegistry,
@@ -14,19 +14,31 @@ var {
 } = React;
 
 var ReactNativeReduxTodoApp = React.createClass({
+
   render: function() {
+    const { dispatch, visibleTodos, visibilityFilter } = this.props;
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
           Welcome to React Native!
         </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
+        <AddTodo
+          onAddClick={text =>
+            dispatch(addTodo(text))
+          }
+        />
+        <TodoList
+          todos={visibleTodos}
+          onTodoClick={index =>
+            dispatch(completeTodo(index))
+          }
+        />
+        <Footer
+          filter={visibilityFilter}
+          onFilterChange={nextFilter =>
+            dispatch(setVisibilityFilter(nextFilter))
+          }
+        />
       </View>
     );
   }
@@ -51,4 +63,34 @@ var styles = StyleSheet.create({
   },
 });
 
-export default ReactNativeReduxTodoApp;
+ReactNativeReduxTodoApp.propTypes = {
+  visibleTodos: React.PropTypes.arrayOf(React.PropTypes.shape({
+    text: React.PropTypes.string.isRequired,
+    completed: React.PropTypes.bool.isRequired
+  })),
+  visibilityFilter: React.PropTypes.oneOf([
+    'SHOW_ALL',
+    'SHOW_COMPLETED',
+    'SHOW_ACTIVE'
+  ]).isRequired
+};
+
+function selectTodos(todos, filter) {
+  switch (filter) {
+    case VisibilityFilters.SHOW_ALL:
+      return todos
+    case VisibilityFilters.SHOW_COMPLETED:
+      return todos.filter(todo => todo.completed)
+    case VisibilityFilters.SHOW_ACTIVE:
+      return todos.filter(todo => !todo.completed)
+  }
+}
+
+function select(state) {
+  return {
+    visibleTodos: selectTodos(state.todos, state.visibilityFilter),
+    visibilityFilter: state.visibilityFilter
+  }
+}
+
+export default connect(select)(ReactNativeReduxTodoApp);
